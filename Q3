@@ -1,0 +1,62 @@
+#include <stdio.h>
+#include <unistd.h>
+#include <semaphore.h>
+#include <fcntl.h>
+#include <sys/wait.h>
+
+void table(int n)
+{
+    int i;
+    for(i = 1; i <= 10; i++)
+        printf("%d x %d = %d\n", n, i, n*i);
+    printf("\n");
+}
+
+int main()
+{
+    sem_t *s1, *s2, *s3;
+
+    s1 = sem_open("/s1", O_CREAT, 0666, 1);
+    s2 = sem_open("/s2", O_CREAT, 0666, 0);
+    s3 = sem_open("/s3", O_CREAT, 0666, 0);
+
+    if(fork() == 0)
+    {
+        sem_wait(s1);
+        table(2);
+        sem_post(s2);
+        return 0;
+    }
+
+    if(fork() == 0)
+    {
+        sem_wait(s2);
+        table(3);
+        sem_post(s3);
+        return 0;
+    }
+
+    if(fork() == 0)
+    {
+        sem_wait(s3);
+        table(4);
+        return 0;
+    }
+
+    wait(NULL);
+    wait(NULL);
+    wait(NULL);
+
+    sem_unlink("/s1");
+    sem_unlink("/s2");
+    sem_unlink("/s3");
+
+    return 0;
+}
+
+
+
+to run :
+
+gcc q3.c -pthread
+./a.out
